@@ -1,0 +1,2 @@
+when you run your script remmember to be in the root of this folder
+DO NOT write a absolute path in the project!!!  
