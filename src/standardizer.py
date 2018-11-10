@@ -5,13 +5,13 @@ import math
 from scipy import stats
 
 def standardize(dataSet):
-    handledData = handeleMissingData(dataSet)
+    handledData = handleMissingData(dataSet)
     return stats.zscore(handledData)
 
 #
 # this function takes missing values marked with -9 and replace those with mean
 #
-def handeleMissingData(data):
+def handleMissingData(data):
     observations = len(data)
     features = len(data[0])
     for j in range(0, features):
@@ -22,7 +22,7 @@ def handeleMissingData(data):
                 mean = mean + data[i][j]
                 count += 1
         mean = mean/count
-        print(mean)
+        #print(mean)
         for i in range(0, observations):
             if(data[i][j] == -9):
                 data[i][j] = mean
