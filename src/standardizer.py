@@ -27,3 +27,9 @@ def handleMissingData(data):
             if(data[i][j] == -9):
                 data[i][j] = mean
     return data
+
+def arrayToBinary(data) : 
+    for obj in range(0,len(data)) :
+        if(data[obj] != 0) :
+            data[obj] = 1
+    return data
