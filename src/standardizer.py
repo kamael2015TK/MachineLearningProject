@@ -22,7 +22,6 @@ def handeleMissingData(data):
                 mean = mean + data[i][j]
                 count += 1
         mean = mean/count
-        print(mean)
         for i in range(0, observations):
             if(data[i][j] == -9):
                 data[i][j] = mean

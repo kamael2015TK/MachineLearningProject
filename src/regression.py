@@ -28,7 +28,7 @@ del attributeNames[targetFeatureIndex]
 ## Crossvalidation
 # Create crossvalidation partition for evaluation
 # code is copied from EX 6_2_1 
-K = 5
+K = 10
 CV = model_selection.KFold(n_splits=K,shuffle=True)
 
 # Initialize variables
@@ -72,7 +72,6 @@ for train_index, test_index in CV.split(X):
         m = lm.LinearRegression(fit_intercept=True).fit(X_train[:,selected_features], y_train)
         Error_train_fs[k] = np.square(y_train-m.predict(X_train[:,selected_features])).sum()/y_train.shape[0]
         Error_test_fs[k] = np.square(y_test-m.predict(X_test[:,selected_features])).sum()/y_test.shape[0]
-    
         figure(k)
         subplot(1,2,1)
         plot(range(1,len(loss_record)), loss_record[1:])
@@ -84,10 +83,10 @@ for train_index, test_index in CV.split(X):
         clim(-1.5,0)
         xlabel('Iteration')
 
-    print('Cross validation fold {0}/{1}'.format(k+1,K))
-    print('Train indices: {0}'.format(train_index))
-    print('Test indices: {0}'.format(test_index))
-    print('Features no: {0}\n'.format(selected_features.size))
+    #print('Cross validation fold {0}/{1}'.format(k+1,K))
+    #print('Train indices: {0}'.format(train_index))
+    #print('Test indices: {0}'.format(test_index))
+    #print('Features no: {0}\n'.format(selected_features.size))
 
     k+=1
 
@@ -125,10 +124,10 @@ for test in range(K):
         print('\nNo features were selected, i.e. the data (X) in the fold cannot describe the outcomes (y).' )
     else:
         m = lm.LinearRegression(fit_intercept=True).fit(X[:,ff], y)
-        
+        displayAttributes = []
         y_est= m.predict(X[:,ff])
         residual=y-y_est
-        
+
         figure(k+f+1, figsize=(12,6))
         title('Residual error vs. Attributes for features selected in cross-validation fold {0}'.format(f))
         for i in range(0,len(ff)):
@@ -136,7 +135,11 @@ for test in range(K):
             plot(X[:,ff[i]],residual,'.')
             xlabel(attributeNames[ff[i]])
             ylabel('residual error')
-        
+            displayAttributes.append(attributeNames[ff[i]])
+        print('Selected model, run: ' + str(test+1) )
+        print(displayAttributes)
+        print(m.coef_)
+        print(m.intercept_)
     
 show()
 

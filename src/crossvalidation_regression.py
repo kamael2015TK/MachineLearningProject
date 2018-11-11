@@ -2,11 +2,6 @@ import numpy as np
 import sklearn.linear_model as lm
 from sklearn import model_selection
 
-def crossValidate(data, numberOfRounds): 
-
-    return 0
-
-
 def feature_selector_lr(X,y,cvf=10,features_record=None,loss_record=None,display=''):
     ''' Function performs feature selection for linear regression model using
         'cvf'-fold cross validation. The process starts with empty set of
