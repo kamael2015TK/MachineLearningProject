@@ -4,24 +4,32 @@ from scipy.io import loadmat
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import confusion_matrix
 from standardizer import *
+import numpy as np
+from scipy.io import loadmat
+from classification_methods import getDecisionTree, resetStateHolder
+from sklearn import model_selection
+import math
+
 
 #run file reader we will get X and lables
 from file_reader import *
-import numpy as np
-from scipy.io import loadmat
-from sklearn import tree
-import graphviz
-import math
+standardizedData = standardize(data)
 
-mat_data = standardize(data)
+# feature to prodict 
+targetFeatureIndex = 7
 
-X = mat_data[:,range(0,7)]
-y = data[:,7].squeeze()
+# creating range to remove the feature we want to prodict 
+if targetFeatureIndex == len(standardizedData[0]) : 
+    featureRange = range(0, len(standardizedData[0]) - 1)
+else :
+    featureRange = list(range(0,targetFeatureIndex)) + list(range(targetFeatureIndex + 1, len(standardizedData[0]) ))
 
+# spliting data
+X = standardizedData[:, featureRange]
+y = data[:, targetFeatureIndex].squeeze()
+N, M = X.shape
 y = arrayToBinary(y)
-
 del attributeNames[len(attributeNames)-1]
-print(attributeNames)
 classNames = [
         'Not sick',
         'Sick'
@@ -29,35 +37,49 @@ classNames = [
 
 N, M = X.shape
 
+outer_loop = 10
+inner_loop = 10
 
-# exercise 5.1.2
+CV_outer = model_selection.KFold(n_splits=outer_loop,shuffle=True)
 
-# Fit regression tree classifier, Gini split criterion, no pruning
-dtc = tree.DecisionTreeClassifier(criterion='gini', min_samples_split=10)
-dtc = dtc.fit(X,y)
+for train_index_o, test_index_o in CV_outer.split(X):
+    
+    # extract training and test set for current CV fold
+    X_train_outer = X[train_index_o,:]
+    y_train_outer = y[train_index_o]
+    X_test_outer = X[test_index_o,:]
+    y_test_outer = y[test_index_o]
 
-# Export tree graph for visualization purposes:
-# (note: you can use i.e. Graphviz application to visualize the file)
-out = tree.export_graphviz(dtc, out_file='tree_gini.gvz', feature_names=attributeNames)
-#graphviz.render('dot','png','tree_gini',quiet=False)
-src=graphviz.Source.from_file('tree_gini.gvz')
+    # splitting training data for inner loop
+    CV_inner = model_selection.KFold(n_splits=inner_loop,shuffle=True)
 
+    # init controll variables
+    startDepth = 5
+    dessisionTreeDepth = range(startDepth, startDepth+inner_loop)
+    i = 0
+    for train_index_i, test_index_i in CV_inner.split(X_train_outer) :
+        X_train_inner = X[train_index_i,:]
+        y_train_inner = y[train_index_i]
+        X_test_inner = X[test_index_i,:]
+        y_test_inner = y[test_index_i]
+        getDecisionTree(
+            data_x=X_train_inner,
+            data_y=y_train_inner,
+            test_x=X_test_inner,
+            test_y=y_test_inner,
+            attributeNames=attributeNames,
+            split=2,
+            depth=dessisionTreeDepth[i])
+        i += 1
+    resetStateHolder()
 
-# Load Matlab data file and extract variables of interest
-#mat_data = loadmat('../Data/synth1.mat')
-#X = mat_data['X']
 X_train = X[range(0,math.floor(len(X)/2))]
 X_test = X[range(math.floor(len(X)/2),len(X))]
-#y = mat_data['y'].squeeze()
+
 y_train = y[range(0,math.floor(len(y)/2))]
 y_test = y[range(math.floor(len(y)/2),len(y))]
-#attributeNames = [name[0] for name in mat_data['attributeNames'].squeeze()]
-#classNames = [name[0][0] for name in mat_data['classNames']]
-#N, M = X.shape
 C = len(classNames)
 
-
-# Plot the training data points (color-coded) and test data points.
 figure(1)
 styles = ['.b', '.r', '.g', '.y']
 for c in range(C):
@@ -65,17 +87,13 @@ for c in range(C):
     plot(X_train[class_mask,0], X_train[class_mask,2], styles[c])
 
 
-# K-nearest neighbors
 Knearest=5
-
-# Distance metric (corresponds to 2nd norm, euclidean distance).
-# You can set dist=1 to obtain manhattan distance (cityblock distance).
 dist=2
 
 # Fit classifier and classify the test points
-knclassifier = KNeighborsClassifier(n_neighbors=Knearest, p=dist);
-knclassifier.fit(X_train, y_train);
-y_est = knclassifier.predict(X_test);
+knclassifier = KNeighborsClassifier(n_neighbors=Knearest, p=dist)
+knclassifier.fit(X_train, y_train)
+y_est = knclassifier.predict(X_test)
 
 
 # Plot the classfication results
@@ -84,16 +102,16 @@ for c in range(C):
     class_mask = (y_est==c)
     plot(X_test[class_mask,0], X_test[class_mask,2], styles[c], markersize=10)
     plot(X_test[class_mask,0], X_test[class_mask,2], 'kx', markersize=8)
-title('Synthetic data classification - KNN');
+title('Synthetic data classification - KNN')
 
 # Compute and plot confusion matrix
-cm = confusion_matrix(y_test, y_est);
-accuracy = 100*cm.diagonal().sum()/cm.sum(); error_rate = 100-accuracy;
-figure(2);
-imshow(cm, cmap='binary', interpolation='None');
+cm = confusion_matrix(y_test, y_est)
+accuracy = 100*cm.diagonal().sum()/cm.sum(); error_rate = 100-accuracy
+figure(2)
+imshow(cm, cmap='binary', interpolation='None')
 colorbar()
-xticks(range(C)); yticks(range(C));
-xlabel('Predicted class'); ylabel('Actual class');
-title('Confusion matrix (Accuracy: {0}%, Error Rate: {1}%)'.format(accuracy, error_rate));
+xticks(range(C)); yticks(range(C))
+xlabel('Predicted class'); ylabel('Actual class')
+title('Confusion matrix (Accuracy: {0}%, Error Rate: {1}%)'.format(accuracy, error_rate))
 
 show()
