@@ -46,6 +46,25 @@ CV_outer = model_selection.KFold(n_splits=outer_loop,shuffle=True)
 des_tree_gen_errors = np.empty(outer_loop)
 knn_gen_errors_array = np.empty(outer_loop)
 logreg_gen_errors_array = np.empty(outer_loop)
+
+best_des_tree_model_outer =None
+best_knn_model_outer = None
+best_logreg_model_outer = None
+worst_des_tree_model_outer =None
+worst_knn_model_outer = None
+worst_logreg_model_outer = None
+best_des_tree_cn_outer = []
+best_knn_cn_outer = []
+best_logreg_cn_outer = []
+worst_des_tree_cn_outer = []
+worst_knn_cn_outer = []
+worst_logreg_cn_outer = []
+gen_error_min_des_tree_outer = 100
+gen_error_min_knn_outer = 100
+gen_error_min_logreg_outer = 100
+gen_error_max_des_tree_outer = 0
+gen_error_max_knn_outer = 0
+gen_error_max_logreg_outer = 0
 k = 0
 for train_index_o, test_index_o in CV_outer.split(X):
     
@@ -99,7 +118,8 @@ for train_index_o, test_index_o in CV_outer.split(X):
         knn_cm = confusion_matrix(y_test_inner, y_est)
         knn_accuracy = 100*knn_cm.diagonal().sum()/knn_cm.sum(); 
         knn_error_rate = 100-knn_accuracy
-        if knn_t_error_rate > knn_error_rate : 
+        if knn_t_error_rate > knn_error_rate :
+            knn_t_error_rate = knn_error_rate
             knn_best_model = knnclassifier 
             knn_neighbors_count = knn_neighbors[i]
 
@@ -112,8 +132,8 @@ for train_index_o, test_index_o in CV_outer.split(X):
         logreg_t_error_rate = 100-logreg_accuracy
 
         if logreg_error_rate > logreg_t_error_rate : 
+            logreg_error_rate = logreg_t_error_rate
             logreg_best_model = logreg
-
                 
 
     ## gen error calc des tree 
@@ -122,13 +142,30 @@ for train_index_o, test_index_o in CV_outer.split(X):
     accuracy = 100*des_tree_gen_conf_matrix.diagonal().sum()/des_tree_gen_conf_matrix.sum()
     error_rate = 100-accuracy
     des_tree_gen_errors[k] = error_rate
-
+    if gen_error_min_des_tree_outer > error_rate :
+        gen_error_min_des_tree_outer = error_rate
+        best_des_tree_model_outer = des_tree_best_model
+        best_des_tree_cn_outer = des_tree_gen_conf_matrix
+    if gen_error_max_des_tree_outer < error_rate :
+        gen_error_max_des_tree_outer = error_rate
+        worst_des_tree_model_outer = des_tree_best_model
+        worst_des_tree_cn_outer = des_tree_gen_conf_matrix
+        
     ## knn ger error 
     knn_y_prodict = knn_best_model.predict(X_test_outer)
     gen_error_con_matrix = confusion_matrix(y_test_outer, knn_y_prodict)
     knn_gen_accuracy = 100*gen_error_con_matrix.diagonal().sum()/gen_error_con_matrix.sum()
     knn_gen_error_rate = 100-knn_gen_accuracy
     knn_gen_errors_array[k] = knn_gen_error_rate
+    if gen_error_min_knn_outer > knn_gen_error_rate :
+        gen_error_min_knn_outer = knn_gen_error_rate
+        best_des_tree_model_outer = des_tree_best_model
+        best_knn_cn_outer = gen_error_con_matrix
+    if gen_error_max_knn_outer < knn_gen_error_rate :
+        gen_error_max_knn_outer = knn_gen_error_rate
+        worst_knn_model_outer = des_tree_best_model
+        worst_knn_cn_outer = gen_error_con_matrix
+
 
     ## log reg error
     #  
@@ -137,34 +174,81 @@ for train_index_o, test_index_o in CV_outer.split(X):
     logreg_gen_accuracy = 100*logreg_gen_error_con_matrix.diagonal().sum()/logreg_gen_error_con_matrix.sum()
     logreg_gen_error_rate = 100-logreg_gen_accuracy
     logreg_gen_errors_array[k] = logreg_gen_error_rate
+    if gen_error_min_logreg_outer > logreg_gen_error_rate :
+        gen_error_min_logreg_outer = logreg_gen_error_rate
+        best_logreg_model_outer = des_tree_best_model
+        best_logreg_cn_outer = logreg_gen_error_con_matrix
+    if gen_error_max_logreg_outer < logreg_gen_error_rate :
+        gen_error_max_logreg_outer = logreg_gen_error_rate
+        worst_logreg_model_outer = des_tree_best_model
+        worst_logreg_cn_outer = logreg_gen_error_con_matrix
+
     k += 1
 
+
+print('\n Decision Tree \n')
 des_tree_gen_error_average =  des_tree_gen_errors.sum()/len(des_tree_gen_errors)
-print(des_tree_gen_error_average)
+print('average: '+ str(des_tree_gen_error_average))
+print('best training error: '+ str(gen_error_min_des_tree_outer))
+print('worst training error: ' +str(gen_error_max_des_tree_outer))
+
+
+print('\n K Nearest Neighbor \n')
 knn_gen_errors_array_average = knn_gen_errors_array.sum() / len(knn_gen_errors_array)
-print(knn_gen_errors_array_average)
+print('average: '+ str(knn_gen_errors_array_average))
+print('best training error: '+ str(gen_error_min_knn_outer))
+print('worst training error: ' +str(gen_error_max_knn_outer))
+
+
+print('\n Logistic Regression  \n')
 logreg_gen_error_rate_average = logreg_gen_errors_array.sum() / len(logreg_gen_errors_array)
-print(logreg_gen_error_rate_average)
+print('average: '+ str(logreg_gen_error_rate_average))
+print('best training error: '+ str(gen_error_min_logreg_outer))
+print('worst training error: ' +str(gen_error_max_logreg_outer))
 
 
+C = 2
+figure(1)
+imshow(best_des_tree_cn_outer, cmap='binary', interpolation='None')
+colorbar()
+xticks(range(C)); yticks(range(C))
+xlabel('Predicted class'); ylabel('Actual class')
+title('Confusion matrix: Decision Tree best run (Accuracy: {0}%, Error Rate: {1}%)'.format(100 - gen_error_min_des_tree_outer, gen_error_min_des_tree_outer))
+
+figure(2)
+imshow(best_knn_cn_outer, cmap='binary', interpolation='None')
+colorbar()
+xticks(range(C)); yticks(range(C))
+xlabel('Predicted class'); ylabel('Actual class')
+title('Confusion matrix: K Nearest Neighbor best run  (Accuracy: {0}%, Error Rate: {1}%)'.format(100 - gen_error_min_knn_outer, gen_error_min_knn_outer))
 
 
+figure(3)
+imshow(best_logreg_cn_outer, cmap='binary', interpolation='None')
+colorbar()
+xticks(range(C)); yticks(range(C))
+xlabel('Predicted class'); ylabel('Actual class')
+title('Confusion matrix:  Logistic Regression best run (Accuracy: {0}%, Error Rate: {1}%)'.format(100 - gen_error_min_logreg_outer, gen_error_min_logreg_outer))
 
-# Plot the classfication results
-#styles = ['ob', 'or', 'og', 'oy']
-#for c in range(C):
-#    class_mask = (y_est==c)
-#    plot(X_test[class_mask,0], X_test[class_mask,2], styles[c], markersize=10)
-#    plot(X_test[class_mask,0], X_test[class_mask,2], 'kx', markersize=8)
-#title('Synthetic data classification - KNN')
+figure(4)
+imshow(worst_des_tree_cn_outer, cmap='binary', interpolation='None')
+colorbar()
+xticks(range(C)); yticks(range(C))
+xlabel('Predicted class'); ylabel('Actual class')
+title('Confusion matrix: Decision Tree worst run (Accuracy: {0}%, Error Rate: {1}%)'.format(100 - gen_error_max_des_tree_outer, gen_error_max_des_tree_outer))
 
-# Compute and plot confusion matrix
+figure(5)
+imshow(worst_knn_cn_outer, cmap='binary', interpolation='None')
+colorbar()
+xticks(range(C)); yticks(range(C))
+xlabel('Predicted class'); ylabel('Actual class')
+title('Confusion matrix: K Nearest Neighbor worst run (Accuracy: {0}%, Error Rate: {1}%)'.format(100 - gen_error_max_knn_outer, gen_error_max_knn_outer))
 
-#figure(2)
-#imshow(cm, cmap='binary', interpolation='None')
-#colorbar()
-#xticks(range(C)); yticks(range(C))
-#xlabel('Predicted class'); ylabel('Actual class')
-#title('Confusion matrix (Accuracy: {0}%, Error Rate: {1}%)'.format(accuracy, error_rate))
+figure(6)
+imshow(worst_logreg_cn_outer, cmap='binary', interpolation='None')
+colorbar()
+xticks(range(C)); yticks(range(C))
+xlabel('Predicted class'); ylabel('Actual class')
+title('Confusion matrix: Logistic Regression worst run (Accuracy: {0}%, Error Rate: {1}%)'.format(100 - gen_error_max_logreg_outer, gen_error_max_logreg_outer))
 
-#show()
+show()
