@@ -81,7 +81,6 @@ for train_index_o, test_index_o in CV_outer.split(X):
     startDepth = 5
     dessisionTreeDepth = range(startDepth, startDepth+inner_loop)
     knn_neighbors = [ 3, 5, 7, 9, 11, 13, 15, 17, 19, 21 ]
-    i = 0
     des_tree_error_rate = 100
     des_tree_best_model = None 
     des_tree_best_depth = 0
@@ -92,36 +91,58 @@ for train_index_o, test_index_o in CV_outer.split(X):
     logreg_best_model = 0
 
     for train_index_i, test_index_i in CV_inner.split(X_train_outer) :
+
         X_train_inner = X[train_index_i,:]
         y_train_inner = y[train_index_i]
         X_test_inner = X[test_index_i,:]
         y_test_inner = y[test_index_i]
+        
+        des_tree_error_rate_3 = 100
+        des_tree_best_model_3 = None 
+        des_tree_best_depth_3 = 0
+        knn_t_error_rate_3 = 100
+        knn_best_model_3 = 0
+        knn_neighbors_count_3 = 0
+
+        for i in dessisionTreeDepth : 
         # des tree
-        confusionMatrix, model = getDecisionTree(
-            data_x=X_train_inner,
-            data_y=y_train_inner,
-            test_x=X_test_inner,
-            test_y=y_test_inner,
-            attributeNames=attributeNames,
-            split=2,
-            depth=dessisionTreeDepth[i])
-        accuracy = 100*confusionMatrix.diagonal().sum()/confusionMatrix.sum()
-        error_rate = 100-accuracy
-        if des_tree_error_rate > error_rate:
-            best_error_rate = error_rate
-            des_tree_best_model = model
-            des_tree_best_depth = dessisionTreeDepth[i]
+            confusionMatrix, model = getDecisionTree(
+                data_x=X_train_inner,
+                data_y=y_train_inner,
+                test_x=X_test_inner,
+                test_y=y_test_inner,
+                attributeNames=attributeNames,
+                split=2,
+                depth=i)
+            accuracy = 100*confusionMatrix.diagonal().sum()/confusionMatrix.sum()
+            error_rate = 100-accuracy
+            if des_tree_error_rate_3 > error_rate:
+                best_error_rate_3 = error_rate
+                des_tree_best_model_3 = model
+                des_tree_best_depth_3 = i
+
+        if des_tree_error_rate > best_error_rate_3:
+            best_error_rate = best_error_rate_3
+            des_tree_best_model = des_tree_best_model_3
+            des_tree_best_depth = des_tree_best_depth_3
         # KNN 
-        knnclassifier = KNeighborsClassifier(n_neighbors=knn_neighbors[i], p=2)
-        knnclassifier.fit(X_train_inner, y_train_inner)
-        y_est = knnclassifier.predict(X_test_inner)
-        knn_cm = confusion_matrix(y_test_inner, y_est)
-        knn_accuracy = 100*knn_cm.diagonal().sum()/knn_cm.sum(); 
-        knn_error_rate = 100-knn_accuracy
-        if knn_t_error_rate > knn_error_rate :
-            knn_t_error_rate = knn_error_rate
-            knn_best_model = knnclassifier 
-            knn_neighbors_count = knn_neighbors[i]
+        i = 0
+        for f in knn_neighbors: 
+            knnclassifier = KNeighborsClassifier(n_neighbors=knn_neighbors[i], p=2)
+            knnclassifier.fit(X_train_inner, y_train_inner)
+            y_est = knnclassifier.predict(X_test_inner)
+            knn_cm = confusion_matrix(y_test_inner, y_est)
+            knn_accuracy = 100*knn_cm.diagonal().sum()/knn_cm.sum(); 
+            knn_error_rate = 100-knn_accuracy
+            if knn_t_error_rate_3 > knn_error_rate :
+                knn_t_error_rate_3 = knn_error_rate
+                knn_best_model_3 = knnclassifier 
+                knn_neighbors_count_3 = knn_neighbors[i]
+            i += 1
+        if knn_t_error_rate > knn_t_error_rate_3 :
+            knn_t_error_rate = knn_t_error_rate_3
+            knn_best_model = knn_best_model_3 
+            knn_neighbors_count = knn_neighbors_count_3
 
         # logistic regression
         logreg = LogisticRegression()
