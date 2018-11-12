@@ -42,6 +42,9 @@ inner_loop = 10
 
 CV_outer = model_selection.KFold(n_splits=outer_loop,shuffle=True)
 
+des_tree_gen_errors = np.empty(outer_loop)
+
+k = 0
 for train_index_o, test_index_o in CV_outer.split(X):
     
     # extract training and test set for current CV fold
@@ -57,12 +60,15 @@ for train_index_o, test_index_o in CV_outer.split(X):
     startDepth = 5
     dessisionTreeDepth = range(startDepth, startDepth+inner_loop)
     i = 0
+    des_tree_error_rate = 100
+    des_tree_best_model = None 
+    des_tree_best_depth = None
     for train_index_i, test_index_i in CV_inner.split(X_train_outer) :
         X_train_inner = X[train_index_i,:]
         y_train_inner = y[train_index_i]
         X_test_inner = X[test_index_i,:]
         y_test_inner = y[test_index_i]
-        getDecisionTree(
+        confusionMatrix, model = getDecisionTree(
             data_x=X_train_inner,
             data_y=y_train_inner,
             test_x=X_test_inner,
@@ -70,8 +76,27 @@ for train_index_o, test_index_o in CV_outer.split(X):
             attributeNames=attributeNames,
             split=2,
             depth=dessisionTreeDepth[i])
+        accuracy = 100*confusionMatrix.diagonal().sum()/confusionMatrix.sum()
+        error_rate = 100-accuracy
+        if des_tree_error_rate > error_rate:
+            best_error_rate = error_rate
+            des_tree_best_model = model
+            des_tree_best_depth = i
         i += 1
-    resetStateHolder()
+    des_tree_gen_errors
+    y_prediction = des_tree_best_model.predict(X_test_outer)
+    des_tree_gen_conf_matrix = confusion_matrix(y_test_outer, y_prediction)
+    accuracy = 100*des_tree_gen_conf_matrix.diagonal().sum()/des_tree_gen_conf_matrix.sum()
+    error_rate = 100-accuracy
+    des_tree_gen_errors[k] = error_rate
+    k += 1
+
+des_tree_gen_error =  des_tree_gen_errors.sum()/len(des_tree_gen_errors)
+print(des_tree_gen_error)
+
+
+
+
 
 X_train = X[range(0,math.floor(len(X)/2))]
 X_test = X[range(math.floor(len(X)/2),len(X))]
