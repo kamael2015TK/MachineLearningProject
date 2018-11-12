@@ -43,7 +43,7 @@ inner_loop = 10
 CV_outer = model_selection.KFold(n_splits=outer_loop,shuffle=True)
 
 des_tree_gen_errors = np.empty(outer_loop)
-
+knn_gen_errors_array = np.empty(outer_loop)
 k = 0
 for train_index_o, test_index_o in CV_outer.split(X):
     
@@ -59,15 +59,20 @@ for train_index_o, test_index_o in CV_outer.split(X):
     # init controll variables
     startDepth = 5
     dessisionTreeDepth = range(startDepth, startDepth+inner_loop)
+    knn_neighbors = [ 3, 5, 7, 9, 11, 13, 15, 17, 19, 21 ]
     i = 0
     des_tree_error_rate = 100
     des_tree_best_model = None 
-    des_tree_best_depth = None
+    des_tree_best_depth = 0
+    knn_t_error_rate = 100
+    knn_best_model = 0
+    knn_neighbors_count = 0
     for train_index_i, test_index_i in CV_inner.split(X_train_outer) :
         X_train_inner = X[train_index_i,:]
         y_train_inner = y[train_index_i]
         X_test_inner = X[test_index_i,:]
         y_test_inner = y[test_index_i]
+        # des tree
         confusionMatrix, model = getDecisionTree(
             data_x=X_train_inner,
             data_y=y_train_inner,
@@ -81,62 +86,60 @@ for train_index_o, test_index_o in CV_outer.split(X):
         if des_tree_error_rate > error_rate:
             best_error_rate = error_rate
             des_tree_best_model = model
-            des_tree_best_depth = i
+            des_tree_best_depth = dessisionTreeDepth[i]
+        # KNN 
+        knnclassifier = KNeighborsClassifier(n_neighbors=knn_neighbors[i], p=2)
+        knnclassifier.fit(X_train_inner, y_train_inner)
+        y_est = knnclassifier.predict(X_test_inner)
+        knn_cm = confusion_matrix(y_test_inner, y_est)
+        knn_accuracy = 100*knn_cm.diagonal().sum()/knn_cm.sum(); 
+        knn_error_rate = 100-knn_accuracy
+        if knn_t_error_rate > knn_error_rate : 
+            knn_best_model = knnclassifier 
+            knn_neighbors_count = knn_neighbors[i]
+
         i += 1
-    des_tree_gen_errors
+
+    ## gen error calc des tree 
     y_prediction = des_tree_best_model.predict(X_test_outer)
     des_tree_gen_conf_matrix = confusion_matrix(y_test_outer, y_prediction)
     accuracy = 100*des_tree_gen_conf_matrix.diagonal().sum()/des_tree_gen_conf_matrix.sum()
     error_rate = 100-accuracy
     des_tree_gen_errors[k] = error_rate
+
+    ## knn ger error 
+    knn_y_prodict = knn_best_model.predict(X_test_outer)
+    gen_error_con_matrix = confusion_matrix(y_test_outer, knn_y_prodict)
+    knn_gen_accuracy = 100*gen_error_con_matrix.diagonal().sum()/gen_error_con_matrix.sum()
+    knn_gen_error_rate = 100-knn_gen_accuracy
+    knn_gen_errors_array[k] = knn_gen_error_rate
     k += 1
 
-des_tree_gen_error =  des_tree_gen_errors.sum()/len(des_tree_gen_errors)
-print(des_tree_gen_error)
+des_tree_gen_error_average =  des_tree_gen_errors.sum()/len(des_tree_gen_errors)
+print(des_tree_gen_error_average)
+knn_gen_errors_array_average = knn_gen_errors_array.sum() / len(knn_gen_errors_array)
+print(knn_gen_errors_array_average)
 
 
 
 
-
-X_train = X[range(0,math.floor(len(X)/2))]
-X_test = X[range(math.floor(len(X)/2),len(X))]
-
-y_train = y[range(0,math.floor(len(y)/2))]
-y_test = y[range(math.floor(len(y)/2),len(y))]
-C = len(classNames)
-
-figure(1)
-styles = ['.b', '.r', '.g', '.y']
-for c in range(C):
-    class_mask = (y_train==c)
-    plot(X_train[class_mask,0], X_train[class_mask,2], styles[c])
-
-
-Knearest=5
-dist=2
-
-# Fit classifier and classify the test points
-knclassifier = KNeighborsClassifier(n_neighbors=Knearest, p=dist)
-knclassifier.fit(X_train, y_train)
-y_est = knclassifier.predict(X_test)
 
 
 # Plot the classfication results
-styles = ['ob', 'or', 'og', 'oy']
-for c in range(C):
-    class_mask = (y_est==c)
-    plot(X_test[class_mask,0], X_test[class_mask,2], styles[c], markersize=10)
-    plot(X_test[class_mask,0], X_test[class_mask,2], 'kx', markersize=8)
-title('Synthetic data classification - KNN')
+#styles = ['ob', 'or', 'og', 'oy']
+#for c in range(C):
+#    class_mask = (y_est==c)
+#    plot(X_test[class_mask,0], X_test[class_mask,2], styles[c], markersize=10)
+#    plot(X_test[class_mask,0], X_test[class_mask,2], 'kx', markersize=8)
+#title('Synthetic data classification - KNN')
 
 # Compute and plot confusion matrix
-cm = confusion_matrix(y_test, y_est)
-accuracy = 100*cm.diagonal().sum()/cm.sum(); error_rate = 100-accuracy
-figure(2)
-imshow(cm, cmap='binary', interpolation='None')
-colorbar()
-xticks(range(C)); yticks(range(C))
-xlabel('Predicted class'); ylabel('Actual class')
-title('Confusion matrix (Accuracy: {0}%, Error Rate: {1}%)'.format(accuracy, error_rate))
 
-show()
+#figure(2)
+#imshow(cm, cmap='binary', interpolation='None')
+#colorbar()
+#xticks(range(C)); yticks(range(C))
+#xlabel('Predicted class'); ylabel('Actual class')
+#title('Confusion matrix (Accuracy: {0}%, Error Rate: {1}%)'.format(accuracy, error_rate))
+
+#show()
