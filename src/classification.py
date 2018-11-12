@@ -1,6 +1,7 @@
 from matplotlib.pyplot import (figure, plot, title, xlabel, ylabel, 
                                colorbar, imshow, xticks, yticks, show)
 from scipy.io import loadmat
+from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import confusion_matrix
 from standardizer import *
@@ -44,6 +45,7 @@ CV_outer = model_selection.KFold(n_splits=outer_loop,shuffle=True)
 
 des_tree_gen_errors = np.empty(outer_loop)
 knn_gen_errors_array = np.empty(outer_loop)
+logreg_gen_errors_array = np.empty(outer_loop)
 k = 0
 for train_index_o, test_index_o in CV_outer.split(X):
     
@@ -67,6 +69,9 @@ for train_index_o, test_index_o in CV_outer.split(X):
     knn_t_error_rate = 100
     knn_best_model = 0
     knn_neighbors_count = 0
+    logreg_error_rate = 100
+    logreg_best_model = 0
+
     for train_index_i, test_index_i in CV_inner.split(X_train_outer) :
         X_train_inner = X[train_index_i,:]
         y_train_inner = y[train_index_i]
@@ -98,7 +103,18 @@ for train_index_o, test_index_o in CV_outer.split(X):
             knn_best_model = knnclassifier 
             knn_neighbors_count = knn_neighbors[i]
 
-        i += 1
+        # logistic regression
+        logreg = LogisticRegression()
+        logreg.fit(X_train_inner, y_train_inner)
+        logreg_y_pred = logreg.predict(X_test_inner)
+        logreg_cm = confusion_matrix(y_test_inner, logreg_y_pred)
+        logreg_accuracy = 100*logreg_cm.diagonal().sum()/logreg_cm.sum(); 
+        logreg_t_error_rate = 100-logreg_accuracy
+
+        if logreg_error_rate > logreg_t_error_rate : 
+            logreg_best_model = logreg
+
+                
 
     ## gen error calc des tree 
     y_prediction = des_tree_best_model.predict(X_test_outer)
@@ -113,13 +129,22 @@ for train_index_o, test_index_o in CV_outer.split(X):
     knn_gen_accuracy = 100*gen_error_con_matrix.diagonal().sum()/gen_error_con_matrix.sum()
     knn_gen_error_rate = 100-knn_gen_accuracy
     knn_gen_errors_array[k] = knn_gen_error_rate
+
+    ## log reg error
+    #  
+    logreg_y_prodict = logreg_best_model.predict(X_test_outer)
+    logreg_gen_error_con_matrix = confusion_matrix(y_test_outer, logreg_y_prodict)
+    logreg_gen_accuracy = 100*logreg_gen_error_con_matrix.diagonal().sum()/logreg_gen_error_con_matrix.sum()
+    logreg_gen_error_rate = 100-logreg_gen_accuracy
+    logreg_gen_errors_array[k] = logreg_gen_error_rate
     k += 1
 
 des_tree_gen_error_average =  des_tree_gen_errors.sum()/len(des_tree_gen_errors)
 print(des_tree_gen_error_average)
 knn_gen_errors_array_average = knn_gen_errors_array.sum() / len(knn_gen_errors_array)
 print(knn_gen_errors_array_average)
-
+logreg_gen_error_rate_average = logreg_gen_errors_array.sum() / len(logreg_gen_errors_array)
+print(logreg_gen_error_rate_average)
 
 
 
