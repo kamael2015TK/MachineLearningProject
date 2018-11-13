@@ -1,5 +1,5 @@
 ##
-# Author Taras Karpin S153067
+# Author Duran KöseS147153
 #
 import xlrd
 import numpy as np

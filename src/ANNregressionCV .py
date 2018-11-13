@@ -1,6 +1,7 @@
 # exercise 8.2.6
 ##
 # Author Janus Bastian Lansner S145349
+# contributors Duran KöseS147153 30%
 # 
 from matplotlib.pyplot import figure, plot, subplot, title, show, bar
 import numpy as np
