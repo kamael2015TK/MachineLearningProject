@@ -1,3 +1,6 @@
+##
+# Author Taras Karpin S153067
+#
 import xlrd
 import numpy as np
 

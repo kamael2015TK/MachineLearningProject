@@ -1,3 +1,6 @@
+##
+# copied from examples provided in the course
+#
 import numpy as np
 import sklearn.linear_model as lm
 from sklearn import model_selection

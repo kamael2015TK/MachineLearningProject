@@ -1,3 +1,6 @@
+##
+# Author Taras Karpin S153067
+#
 from sklearn import tree, metrics
 from run_state_keeper import StateKeeper
 import graphviz

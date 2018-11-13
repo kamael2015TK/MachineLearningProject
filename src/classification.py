@@ -1,3 +1,7 @@
+##
+# Main Author Taras Karpin S153067
+# contributors Janus Bastian Lansner S145349 35% Duran Köse S147153 20%
+#
 from matplotlib.pyplot import (figure, plot, title, xlabel, ylabel, 
                                colorbar, imshow, xticks, yticks, show)
 from scipy.io import loadmat

@@ -1,3 +1,7 @@
+##
+# Author Janus Bastian Lansner S145349
+# contributors Taras Karpin S153067 30%
+
 #!/usr/bin/python
 import numpy as np
 import xlrd

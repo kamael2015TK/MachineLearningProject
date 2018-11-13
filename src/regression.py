@@ -1,3 +1,7 @@
+##
+# Main Author Duran Köse S147153
+# contributors Taras Karpin S153067 30% and Janus Bastian Lansner S145349 20%
+#
 from matplotlib.pyplot import figure, plot, subplot, title, xlabel, ylabel, show, clim
 from standardizer import standardize
 from sklearn import model_selection
