@@ -65,6 +65,9 @@ gen_error_min_logreg_outer = 100
 gen_error_max_des_tree_outer = 0
 gen_error_max_knn_outer = 0
 gen_error_max_logreg_outer = 0
+
+base_line_error_rate = np.empty(outer_loop)
+base_line_cn = [[] for _ in range(outer_loop)]
 k = 0
 for train_index_o, test_index_o in CV_outer.split(X):
     
@@ -204,7 +207,25 @@ for train_index_o, test_index_o in CV_outer.split(X):
         worst_logreg_model_outer = des_tree_best_model
         worst_logreg_cn_outer = logreg_gen_error_con_matrix
 
+    # extending to base line
+
+    largest_class = 0
+    if y_train_outer.sum() <= len(y_train_outer) / 2 :
+        largest_class = 0
+    else : 
+        largest_class = 1        
+    largest_class_prodiction = np.empty(len(y_test_outer))
+    largest_class_prodiction.fill(largest_class)
+
+    bs_cn = confusion_matrix(y_test_outer, largest_class_prodiction)
+    base_line_cn[k] = bs_cn
+    bs_error_rate = 100 - (100*bs_cn.diagonal().sum()/bs_cn.sum())
+    base_line_error_rate[k] = bs_error_rate
+    y_test_outer
+
+
     k += 1
+
 
 
 print('\n Decision Tree \n')
@@ -271,5 +292,31 @@ colorbar()
 xticks(range(C)); yticks(range(C))
 xlabel('Predicted class'); ylabel('Actual class')
 title('Confusion matrix: Logistic Regression worst run (Accuracy: {0}%, Error Rate: {1}%)'.format(100 - gen_error_max_logreg_outer, gen_error_max_logreg_outer))
+
+min_error_rate = base_line_error_rate.min()
+max_error_rate = base_line_error_rate.max()
+
+min_conf_matrix = base_line_cn[np.argmin(base_line_error_rate)]
+max_conf_matrix = base_line_cn[np.argmax(base_line_error_rate)]
+
+print('\nBase line  \n')
+print('average: '+ str(base_line_error_rate.sum()/len(base_line_error_rate)))
+print('best training error: '+ str(min_error_rate))
+print('worst training error: ' +str(max_error_rate))
+
+figure(7)
+imshow(min_conf_matrix, cmap='binary', interpolation='None')
+colorbar()
+xticks(range(C)); yticks(range(C))
+xlabel('Predicted class'); ylabel('Actual class')
+title('Confusion matrix: Baseline best run (Accuracy: {0}%, Error Rate: {1}%)'.format(100 - min_error_rate, min_error_rate))
+
+figure(8)
+imshow(max_conf_matrix, cmap='binary', interpolation='None')
+colorbar()
+xticks(range(C)); yticks(range(C))
+xlabel('Predicted class'); ylabel('Actual class')
+title('Confusion matrix: BaseLine Worst run (Accuracy: {0}%, Error Rate: {1}%)'.format(100 - max_error_rate, max_error_rate))
+
 
 show()
